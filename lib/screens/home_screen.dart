@@ -10,7 +10,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Data simulasi sementara sebelum disambungkan ke web3dart
   final List<LogbookItem> _items = [
     LogbookItem(
       id: 0,
@@ -30,10 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   bool _isLoading = false;
-  String _txStatus = 'Siap'; // Status: Siap | Memproses | Berhasil | Gagal
+  String _txStatus = 'Siap';
   String _txDetail = '';
 
-  // Fungsi Refresh / Baca Data dari Kontrak
   Future<void> _muatUlangData() async {
     setState(() => _isLoading = true);
     try {
@@ -44,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Fungsi Tambah Peminjaman Baru
   Future<void> _prosesTambahPeminjaman(String namaAlat, String peminjam) async {
     setState(() {
       _txStatus = 'Memproses';
@@ -78,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Fungsi Tandai Alat Sudah Dikembalikan
   Future<void> _prosesKembalikanAlat(int index) async {
     setState(() {
       _txStatus = 'Memproses';
@@ -112,17 +108,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _formatWaktu(DateTime dt) {
-    return '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final totalDipinjam = _items.where((e) => !e.sudahKembali).length;
+    final totalKembali = _items.where((e) => e.sudahKembali).length;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Logbook Alat Lab IoT'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Logbook Lab IoT',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+            ),
+            Text(
+              'Sepolia Testnet • On-Chain Record',
+              style: TextStyle(fontSize: 11, color: Colors.white70),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Muat Ulang Data',
             onPressed: _isLoading ? null : _muatUlangData,
           ),
@@ -130,44 +141,114 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Banner Indikator Status Transaksi (Wajib di Modul)
+          // Header Ringkasan Statistik
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0F766E),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    label: 'Sedang Dipinjam',
+                    count: totalDipinjam,
+                    icon: Icons.memory_rounded,
+                    accentColor: Colors.amber.shade300,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    label: 'Dikembalikan',
+                    count: totalKembali,
+                    icon: Icons.check_circle_outline_rounded,
+                    accentColor: Colors.tealAccent.shade200,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Banner Indikator Status Transaksi
           if (_txStatus != 'Siap')
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              color: _txStatus == 'Memproses'
-                  ? Colors.amber.shade100
-                  : _txStatus == 'Berhasil'
-                      ? Colors.green.shade100
-                      : Colors.red.shade100,
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _txStatus == 'Memproses'
+                    ? Colors.amber.shade50
+                    : _txStatus == 'Berhasil'
+                      ? Colors.teal.shade50
+                      : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _txStatus == 'Memproses'
+                      ? Colors.amber.shade300
+                      : _txStatus == 'Berhasil'
+                          ? Colors.teal.shade300
+                          : Colors.red.shade300,
+                ),
+              ),
               child: Row(
                 children: [
                   Icon(
                     _txStatus == 'Memproses'
-                        ? Icons.hourglass_top
+                        ? Icons.hourglass_top_rounded
                         : _txStatus == 'Berhasil'
-                            ? Icons.check_circle
-                            : Icons.error,
+                            ? Icons.verified_rounded
+                            : Icons.error_outline_rounded,
+                    size: 20,
                     color: _txStatus == 'Memproses'
-                        ? Colors.orange.shade800
+                        ? Colors.amber.shade800
                         : _txStatus == 'Berhasil'
-                            ? Colors.green.shade800
+                            ? Colors.teal.shade800
                             : Colors.red.shade800,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '[$_txStatus] $_txDetail',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                      '$_txStatus • $_txDetail',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.blueGrey.shade800,
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    onPressed: () => setState(() => _txStatus = 'Siap'),
+                  InkWell(
+                    onTap: () => setState(() => _txStatus = 'Siap'),
+                    child: const Icon(Icons.close, size: 18, color: Colors.black54),
                   )
                 ],
               ),
             ),
+
+          // Judul Bagian Daftar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Riwayat Peminjaman Alat',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                Text(
+                  '${_items.length} catatan',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+          ),
 
           // Daftar Logbook Peminjaman
           Expanded(
@@ -176,50 +257,178 @@ class _HomeScreenState extends State<HomeScreen> {
                 : RefreshIndicator(
                     onRefresh: _muatUlangData,
                     child: _items.isEmpty
-                        ? const Center(child: Text('Belum ada data peminjaman alat.'))
+                        ? const Center(
+                            child: Text(
+                              'Belum ada data peminjaman alat.',
+                              style: TextStyle(color: Color(0xFF64748B)),
+                            ),
+                          )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                             itemCount: _items.length,
                             itemBuilder: (context, index) {
                               final item = _items[index];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                child: ListTile(
-                                  leading: Icon(
-                                    item.sudahKembali
-                                        ? Icons.check_box
-                                        : Icons.inventory_2_outlined,
-                                    color: item.sudahKembali ? Colors.green : Colors.blue,
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: item.sudahKembali
+                                        ? Colors.grey.shade200
+                                        : const Color(0xFFCCFBF1),
+                                    width: 1.2,
                                   ),
-                                  title: Text(
-                                    item.namaAlat,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      decoration: item.sudahKembali
-                                          ? TextDecoration.lineThrough
-                                          : TextDecoration.none,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
                                     ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Peminjam: ${item.peminjam}'),
-                                      Text('Pinjam: ${_formatWaktu(item.waktuPinjam)}'),
-                                      if (item.waktuKembali != null)
-                                        Text(
-                                          'Kembali: ${_formatWaktu(item.waktuKembali!)}',
-                                          style: const TextStyle(color: Colors.green),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(9),
+                                          decoration: BoxDecoration(
+                                            color: item.sudahKembali
+                                                ? const Color(0xFFF1F5F9)
+                                                : const Color(0xFFCCFBF1),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(
+                                            item.sudahKembali
+                                                ? Icons.check_circle_rounded
+                                                : Icons.developer_board_rounded,
+                                            color: item.sudahKembali
+                                                ? const Color(0xFF64748B)
+                                                : const Color(0xFF0F766E),
+                                            size: 22,
+                                          ),
                                         ),
-                                    ],
-                                  ),
-                                  trailing: item.sudahKembali
-                                      ? const Chip(
-                                          label: Text('Selesai', style: TextStyle(fontSize: 11)),
-                                        )
-                                      : ElevatedButton(
-                                          onPressed: () => _prosesKembalikanAlat(index),
-                                          child: const Text('Kembalikan'),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.namaAlat,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: item.sudahKembali
+                                                      ? const Color(0xFF64748B)
+                                                      : const Color(0xFF0F172A),
+                                                  decoration: item.sudahKembali
+                                                      ? TextDecoration.lineThrough
+                                                      : TextDecoration.none,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                item.peminjam,
+                                                style: const TextStyle(
+                                                  fontSize: 12.5,
+                                                  color: Color(0xFF475569),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: item.sudahKembali
+                                                ? const Color(0xFFDCFCE7)
+                                                : const Color(0xFFFEF3C7),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            item.sudahKembali ? 'Selesai' : 'Dipinjam',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: item.sudahKembali
+                                                  ? const Color(0xFF166534)
+                                                  : const Color(0xFF92400E),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 10),
+                                      child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.access_time_rounded,
+                                                    size: 13, color: Color(0xFF64748B)),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Pinjam: ${_formatWaktu(item.waktuPinjam)}',
+                                                  style: const TextStyle(
+                                                    fontSize: 11.5,
+                                                    color: Color(0xFF64748B),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (item.waktuKembali != null) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  const Icon(Icons.event_available_rounded,
+                                                      size: 13, color: Color(0xFF0F766E)),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Kembali: ${_formatWaktu(item.waktuKembali!)}',
+                                                    style: const TextStyle(
+                                                      fontSize: 11.5,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Color(0xFF0F766E),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        if (!item.sudahKembali)
+                                          FilledButton.tonalIcon(
+                                            onPressed: () => _prosesKembalikanAlat(index),
+                                            icon: const Icon(Icons.assignment_return_rounded,
+                                                size: 16),
+                                            label: const Text(
+                                              'Kembalikan',
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: const Color(0xFFCCFBF1),
+                                              foregroundColor: const Color(0xFF0F766E),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 8,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               );
                             },
@@ -239,8 +448,52 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Pinjam Alat'),
+        backgroundColor: const Color(0xFF0F766E),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Pinjam Alat',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required String label,
+    required int count,
+    required IconData icon,
+    required Color accentColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: accentColor, size: 24),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$count Alat',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

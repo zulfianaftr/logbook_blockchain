@@ -4,8 +4,11 @@ import 'screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Memuat file .env lokal sebelum aplikasi berjalan
-  await dotenv.load(fileName: '.env');
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    // Tetap jalankan aplikasi meskipun .env belum lengkap
+  }
   runApp(const LogbookApp());
 }
 
@@ -18,8 +21,17 @@ class LogbookApp extends StatelessWidget {
       title: 'Logbook Lab IoT Blockchain',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0F766E),
+          surface: const Color(0xFFF8FAFC),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF1F5F9),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F766E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
       home: const HomeScreen(),
     );
