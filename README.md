@@ -13,7 +13,7 @@ Aplikasi mobile berbasis Flutter yang terintegrasi dengan jaringan Ethereum Sepo
 ## Informasi Smart Contract (Sepolia Testnet)
 * Jaringan: Ethereum Sepolia Testnet (`Chain ID: 11155111`)
 * Contract Address: `0x2A23D5BfD63f6Ed04AFB56407c38177E6A44010e`
-* Sepolia Etherscan: (https://sepolia.etherscan.io/address/0x041BDB714680eb4913784ed15223468CaaCEA608)
+* Sepolia Etherscan: (https://sepolia.etherscan.io/address/0x2A23D5BfD63f6Ed04AFB56407c38177E6A44010e)
 
 ---
 
