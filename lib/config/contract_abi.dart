@@ -112,4 +112,4 @@ const String logbookAbi = '''
 		"type": "function"
 	}
 ]
-'''
+''';
